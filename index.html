@@ -232,7 +232,7 @@ function render(){
       <td class="authors hide-sm">${esc(r["Authors"])}</td>
       <td class="title">${esc(r["Title"])}</td>
       <td class="year">${esc(r["Year"])}</td>
-      <td class="hide-sm">${r["Methods"]?`<span class="pill">${esc(r["Methods"])}</span>`:""}</td>
+      <td class="hide-sm">${r["Journal"]?`<span class="pill">${esc(r["Journal"])}</span>`:""}</td>
       <td class="country hide-sm">${esc(r["Country"])}</td>`;
     tr.onclick = () => { openId = (openId===id ? null : id); render(); };
     body.appendChild(tr);
