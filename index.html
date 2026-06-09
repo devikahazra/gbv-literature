@@ -58,6 +58,8 @@
   .selbar button:hover{filter:brightness(1.08)}
   .selbar button.ghost{background:transparent; color:var(--muted); border-color:var(--line-2)}
   .selbar button.ghost:hover{border-color:var(--accent); color:var(--accent); filter:none}
+  .selbar .fname{padding:8px 11px; border:1px solid var(--line-2); border-radius:9px; background:var(--card); font:inherit; font-size:13px; color:var(--ink); max-width:200px}
+  .selbar .fname:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
   th.selcol,td.selcol{width:40px; padding-left:16px; padding-right:0; text-align:center}
   td.selcol input,th.selcol input{width:16px; height:16px; cursor:pointer; accent-color:var(--accent)}
   .tablecard{background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); overflow:hidden}
@@ -162,7 +164,7 @@ const HIDE_SM      = new Set(["Authors","Methods","Country"]);  // columns hidde
 const PAGE_SIZE    = 50;                                        // records per page
 
 let COLUMNS = [], PRIMARY = [], FACETS = [], SPAN_FIELDS = new Set();
-let rows = [], sortKey = "No", sortDir = 1, openId = null, page = 1, lastSig = "", selected = new Set();
+let rows = [], sortKey = "No", sortDir = 1, openId = null, page = 1, lastSig = "", selected = new Set(), fileName = "";
 
 function start(data, fields){
   rows = data.filter(r => Object.values(r).some(v => (v||"").trim() !== ""));
@@ -354,8 +356,12 @@ function renderSelbar(){
   const n = selected.size;
   if(!n){ bar.innerHTML = ""; return; }
   bar.innerHTML = `<span>${n} selected</span>
-    <button id="dlsel">Download selected as CSV</button>
+    <input id="fname" class="fname" type="text" placeholder="selected-papers" value="${esc(fileName)}" aria-label="File name">
+    <button id="dlsel">Download CSV</button>
     <button id="clrsel" class="ghost">Clear selection</button>`;
+  const fn = document.getElementById("fname");
+  fn.oninput = () => { fileName = fn.value; };
+  fn.onkeydown = (e) => { if(e.key === "Enter") exportCsv(); };
   document.getElementById("dlsel").onclick = exportCsv;
   document.getElementById("clrsel").onclick = () => { selected.clear(); render(); };
 }
@@ -363,13 +369,15 @@ function renderSelbar(){
 function exportCsv(){
   const chosen = rows.filter(r => selected.has(r["No"] + "|" + r["Title"]));
   if(!chosen.length) return;
+  let name = (fileName || "").trim().replace(/[\\/:*?"<>|]+/g, "-") || "selected-papers";
+  if(!/\.csv$/i.test(name)) name += ".csv";
   const cell = s => { s = (s==null ? "" : String(s)); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; };
   const lines = [COLUMNS.map(cell).join(",")];
   chosen.forEach(r => lines.push(COLUMNS.map(c => cell(r[c])).join(",")));
   const blob = new Blob(["\ufeff" + lines.join("\r\n")], {type:"text/csv;charset=utf-8"});
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = "selected-papers.csv";
+  a.href = url; a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
 }
