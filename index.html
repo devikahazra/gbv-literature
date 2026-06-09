@@ -102,7 +102,6 @@
     </div>
     <select id="f-Country"></select>
     <select id="f-Methods"></select>
-    <select id="f-Context"></select>
     <button class="clear" id="clear">Reset</button>
   </div>
 
@@ -124,8 +123,8 @@
 
 <script>
 const PRIMARY = ["No","Authors","Title","Year","Methods","Country"];
-const FACETS  = ["Country","Methods","Context"];
-const ALL_COLS = ["No","Authors","Title","Year","Journal","Identification Shock","Outcome","Methods","Main Results","Theoretical Framework","Data Source","Context","Country"];
+const FACETS  = ["Country","Methods"];
+const ALL_COLS = ["No","Authors","Title","Year","Journal","Identification Shock","Outcome","Methods","Main Results","Theoretical Framework","Data Source","Country"];
 const SPAN_FIELDS = new Set(["Title","Main Results","Theoretical Framework"]);
 
 let rows = [], sortKey = "No", sortDir = 1, openId = null;
