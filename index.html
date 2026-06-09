@@ -278,7 +278,7 @@ function cellHtml(r, c){
   if(c === "Authors") return `<td class="authors${sm}">${v}</td>`;
   if(c === "Year")    return `<td class="year">${v}</td>`;
   if(c === "Country") return `<td class="country${sm}">${v}</td>`;
-  if(c === "Methods") return `<td class="${sm.trim()}">${r[c]?`<span class="pill">${v}</span>`:""}</td>`;
+  if(c === "Methods") return `<td class="${sm.trim()}">${v}</td>`;;
   return `<td class="${sm.trim()}">${v}</td>`;
 }
 </script>
