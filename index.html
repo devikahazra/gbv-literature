@@ -89,6 +89,8 @@
   .field .k{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); font-weight:600; margin-bottom:3px}
   .field .v{color:var(--ink); white-space:pre-wrap; word-wrap:break-word}
   .field .v.empty{color:var(--line-2)}
+  .field .v a{display:inline-block; color:var(--accent); text-decoration:none; font-weight:500; border:1px solid var(--line-2); border-radius:8px; padding:5px 12px; margin-top:2px}
+  .field .v a:hover{border-color:var(--accent); background:var(--accent-soft)}
   .field.span{grid-column:1 / -1}
   .empty-state{padding:60px 20px; text-align:center; color:var(--muted)}
   .loader{padding:60px 20px; text-align:center; color:var(--muted)}
@@ -160,6 +162,7 @@ const SPAN_PREF    = ["Title","Main Results","Theoretical Framework","Abstract",
 const DETAIL_SKIP  = new Set(["Authors"]);
 const LABELS       = {"Authors (full)":"Authors"};
 const LIST_FIELDS  = new Set(["Data Sources","Methods"]);  // split on ";" into separate lines
+const LINK_FIELDS  = new Set(["Link"]);                    // render as a clickable hyperlink
 const HIDE_SM      = new Set(["Authors","Methods","Country"]);  // columns hidden on phones
 const PAGE_SIZE    = 50;                                        // records per page
 
@@ -320,9 +323,11 @@ function render(){
         const v = (r[c]||"").trim();
         const label = LABELS[c] || c;
         let valHtml = "—";
-        if(v) valHtml = LIST_FIELDS.has(c)
-          ? v.split(";").map(s=>esc(s.trim())).filter(Boolean).join("<br>")
-          : esc(v);
+        if(v) valHtml = LINK_FIELDS.has(c)
+          ? `<a href="${esc(v)}" target="_blank" rel="noopener noreferrer">View paper ↗</a>`
+          : LIST_FIELDS.has(c)
+            ? v.split(";").map(s=>esc(s.trim())).filter(Boolean).join("<br>")
+            : esc(v);
         return `<div class="field ${SPAN_FIELDS.has(c)?"span":""}">
           <div class="k">${esc(label)}</div>
           <div class="v ${v?"":"empty"}">${valHtml}</div></div>`;
