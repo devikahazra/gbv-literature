@@ -40,6 +40,7 @@
     background:var(--card); font:inherit; color:var(--ink); cursor:pointer; max-width:200px;
   }
   select:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
+  #facetbox{display:contents}
   .clear{padding:11px 14px; border:1px solid var(--line-2); border-radius:10px; background:transparent; font:inherit; color:var(--muted); cursor:pointer}
   .clear:hover{border-color:var(--accent); color:var(--accent)}
   .meta{color:var(--muted); font-size:13px; margin:0 0 14px}
@@ -100,8 +101,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
       <input id="q" type="search" placeholder="Search authors, titles, results, data…" autocomplete="off">
     </div>
-    <select id="f-Country"></select>
-    <select id="f-Methods"></select>
+    <span id="facetbox"></span>
     <button class="clear" id="clear">Reset</button>
   </div>
 
@@ -119,18 +119,37 @@
     </table>
   </div>
 
-
+  </div>
 
 <script>
-const PRIMARY = ["No","Authors","Title","Year","Methods","Country"];
-const FACETS  = ["Country","Methods"];
-const ALL_COLS = ["No","Authors","Title","Year","Journal","Identifying Shock","Outcome","Methods","Main Results","Data Source","Country"];
-const SPAN_FIELDS = new Set(["Title","Main Results"]);
+/* ---------------------------------------------------------------------------
+   The page reads its columns from the CSV header — edit data/papers.csv only.
+   The lists below are just PREFERENCES; any column not present is ignored, and
+   columns are matched by their exact header name.
+   - PRIMARY_PREF : which columns appear in the compact table (if present)
+   - FACET_PREF   : which columns get a filter dropdown (if present)
+   - SPAN_PREF    : long text columns that span full width in the expanded card
+   - DETAIL_SKIP  : columns hidden from the expanded card
+   - LABELS       : rename a column's label in the expanded card only
+--------------------------------------------------------------------------- */
+const PRIMARY_PREF = ["No","Authors","Title","Year","Methods","Country"];
+const FACET_PREF   = ["Country","Methods","Context","Group Type","Journal"];
+const SPAN_PREF    = ["Title","Main Results","Theoretical Framework","Abstract","Notes","Gap/Difference","Outcome"];
+const DETAIL_SKIP  = new Set(["No","Authors"]);
+const LABELS       = {"Authors (full)":"Authors"};
+const HIDE_SM      = new Set(["Authors","Methods","Country"]);  // columns hidden on phones
 
+let COLUMNS = [], PRIMARY = [], FACETS = [], SPAN_FIELDS = new Set();
 let rows = [], sortKey = "No", sortDir = 1, openId = null;
 
-function start(data){
+function start(data, fields){
   rows = data.filter(r => Object.values(r).some(v => (v||"").trim() !== ""));
+  COLUMNS = (fields && fields.length) ? fields : (rows[0] ? Object.keys(rows[0]) : []);
+  PRIMARY = PRIMARY_PREF.filter(c => COLUMNS.includes(c));
+  if(!PRIMARY.length) PRIMARY = COLUMNS.slice(0, 6);          // fallback: first few columns
+  FACETS  = FACET_PREF.filter(c => COLUMNS.includes(c));
+  SPAN_FIELDS = new Set(SPAN_PREF.filter(c => COLUMNS.includes(c)));
+  sortKey = PRIMARY.includes("No") ? "No" : PRIMARY[0];
   document.getElementById("loader").style.display = "none";
   document.getElementById("table").style.display = "";
   buildHead(); buildFacets(); render();
@@ -138,7 +157,7 @@ function start(data){
 
 fetch("data/papers.csv")
   .then(r => { if(!r.ok) throw new Error(); return r.text(); })
-  .then(t => start(Papa.parse(t, {header:true, skipEmptyLines:true}).data))
+  .then(t => { const p = Papa.parse(t, {header:true, skipEmptyLines:true}); start(p.data, p.meta.fields); })
   .catch(() => {
     document.getElementById("loader").style.display = "none";
     document.getElementById("fallback").style.display = "block";
@@ -146,9 +165,9 @@ fetch("data/papers.csv")
 
 document.getElementById("file").addEventListener("change", e => {
   const f = e.target.files[0]; if(!f) return;
-  Papa.parse(f, {header:true, skipEmptyLines:true, complete: res => {
+  Papa.parse(f, {header:true, skipEmptyLines:true, complete: p => {
     document.getElementById("fallback").style.display = "none";
-    start(res.data);
+    start(p.data, p.meta.fields);
   }});
 });
 
@@ -158,7 +177,7 @@ function buildHead(){
   PRIMARY.forEach(c => {
     const th = document.createElement("th");
     th.textContent = c;
-    if(["Authors","Methods","Country"].includes(c)) th.className = "hide-sm";
+    if(HIDE_SM.has(c)) th.className = "hide-sm";
     const a = document.createElement("span"); a.className = "arrow"; a.textContent = "▲";
     th.appendChild(a);
     th.onclick = () => { sortDir = sortKey === c ? -sortDir : 1; sortKey = c; render(); };
@@ -167,16 +186,20 @@ function buildHead(){
 }
 
 function buildFacets(){
+  const box = document.getElementById("facetbox");
+  box.innerHTML = "";
   FACETS.forEach(c => {
-    const sel = document.getElementById("f-"+c);
+    const sel = document.createElement("select");
+    sel.id = "f-" + c;
     const vals = [...new Set(rows.map(r => (r[c]||"").trim()).filter(Boolean))].sort();
-    sel.innerHTML = `<option value="">All ${c}</option>` + vals.map(v=>`<option>${esc(v)}</option>`).join("");
+    sel.innerHTML = `<option value="">All ${esc(c)}</option>` + vals.map(v=>`<option>${esc(v)}</option>`).join("");
     sel.onchange = render;
+    box.appendChild(sel);
   });
   document.getElementById("q").oninput = render;
   document.getElementById("clear").onclick = () => {
     document.getElementById("q").value = "";
-    FACETS.forEach(c => document.getElementById("f-"+c).value = "");
+    FACETS.forEach(c => { const s = document.getElementById("f-"+c); if(s) s.value = ""; });
     render();
   };
 }
@@ -185,10 +208,10 @@ function esc(s){return (s||"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">"
 
 function filtered(){
   const q = document.getElementById("q").value.toLowerCase().trim();
-  const fv = {}; FACETS.forEach(c => fv[c] = document.getElementById("f-"+c).value);
+  const fv = {}; FACETS.forEach(c => { const s = document.getElementById("f-"+c); fv[c] = s ? s.value : ""; });
   return rows.filter(r => {
     for(const c of FACETS) if(fv[c] && (r[c]||"").trim() !== fv[c]) return false;
-    if(q && !ALL_COLS.some(c => (r[c]||"").toLowerCase().includes(q))) return false;
+    if(q && !COLUMNS.some(c => (r[c]||"").toLowerCase().includes(q))) return false;
     return true;
   });
 }
@@ -227,29 +250,36 @@ function render(){
     const id = r["No"] + "|" + r["Title"];
     const tr = document.createElement("tr");
     tr.className = "row" + (openId===id ? " open" : "");
-    tr.innerHTML = `
-      <td class="num">${esc(r["No"])}</td>
-      <td class="authors hide-sm">${esc(r["Authors"])}</td>
-      <td class="title">${esc(r["Title"])}</td>
-      <td class="year">${esc(r["Year"])}</td>
-      <td class="hide-sm">${r["Journal"]?`<span class="pill">${esc(r["Journal"])}</span>`:""}</td>
-      <td class="country hide-sm">${esc(r["Country"])}</td>`;
+    tr.innerHTML = PRIMARY.map(c => cellHtml(r, c)).join("");
     tr.onclick = () => { openId = (openId===id ? null : id); render(); };
     body.appendChild(tr);
 
     if(openId === id){
       const dt = document.createElement("tr");
       dt.className = "detail";
-      const fields = ALL_COLS.filter(c => !["No"].includes(c)).map(c => {
+      const fields = COLUMNS.filter(c => !DETAIL_SKIP.has(c)).map(c => {
         const v = (r[c]||"").trim();
+        const label = LABELS[c] || c;
         return `<div class="field ${SPAN_FIELDS.has(c)?"span":""}">
-          <div class="k">${esc(c)}</div>
+          <div class="k">${esc(label)}</div>
           <div class="v ${v?"":"empty"}">${v?esc(v):"—"}</div></div>`;
       }).join("");
       dt.innerHTML = `<td colspan="${PRIMARY.length}"><div class="detail-inner">${fields}</div></td>`;
       body.appendChild(dt);
     }
   });
+}
+
+function cellHtml(r, c){
+  const v = esc(r[c] || "");
+  const sm = HIDE_SM.has(c) ? " hide-sm" : "";
+  if(c === "No")      return `<td class="num">${v}</td>`;
+  if(c === "Title")   return `<td class="title">${v}</td>`;
+  if(c === "Authors") return `<td class="authors${sm}">${v}</td>`;
+  if(c === "Year")    return `<td class="year">${v}</td>`;
+  if(c === "Country") return `<td class="country${sm}">${v}</td>`;
+  if(c === "Methods") return `<td class="${sm.trim()}">${r[c]?`<span class="pill">${v}</span>`:""}</td>`;
+  return `<td class="${sm.trim()}">${v}</td>`;
 }
 </script>
 </body>
