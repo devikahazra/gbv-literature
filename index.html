@@ -133,11 +133,11 @@
    - LABELS       : rename a column's label in the expanded card only
 --------------------------------------------------------------------------- */
 const PRIMARY_PREF = ["Authors","Title","Year","Journal","Country"];
-const FACET_PREF   = ["Country","Methods","Context","Group Type","Journal"];
+const FACET_PREF   = ["Country","Methods","Year","Journal"];
 const SPAN_PREF    = ["Title","Main Results","Theoretical Framework","Abstract","Notes","Gap/Difference","Outcome"];
 const DETAIL_SKIP  = new Set(["Authors"]);
 const LABELS       = {"Authors (full)":"Authors"};
-const LIST_FIELDS  = new Set(["Data Source"]);  // split on ";" into separate lines
+const LIST_FIELDS  = new Set(["Data Sources"]);  // split on ";" into separate lines
 const HIDE_SM      = new Set(["Authors","Methods","Country"]);  // columns hidden on phones
 
 let COLUMNS = [], PRIMARY = [], FACETS = [], SPAN_FIELDS = new Set();
