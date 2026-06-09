@@ -51,6 +51,15 @@
   .clear:hover{border-color:var(--accent); color:var(--accent)}
   .meta{color:var(--muted); font-size:13px; margin:0 0 14px}
   .meta b{color:var(--ink); font-weight:600}
+  .selbar{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:0 0 14px; min-height:0}
+  .selbar:empty{display:none}
+  .selbar span{font-size:13px; color:var(--ink); font-weight:600}
+  .selbar button{padding:9px 14px; border:1px solid var(--accent); border-radius:9px; background:var(--accent); color:#fff; font:inherit; font-size:13px; cursor:pointer}
+  .selbar button:hover{filter:brightness(1.08)}
+  .selbar button.ghost{background:transparent; color:var(--muted); border-color:var(--line-2)}
+  .selbar button.ghost:hover{border-color:var(--accent); color:var(--accent); filter:none}
+  th.selcol,td.selcol{width:40px; padding-left:16px; padding-right:0; text-align:center}
+  td.selcol input,th.selcol input{width:16px; height:16px; cursor:pointer; accent-color:var(--accent)}
   .tablecard{background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); overflow:hidden}
   table{width:100%; border-collapse:collapse}
   thead th{
@@ -114,6 +123,7 @@
   </div>
 
   <p class="meta" id="meta"></p>
+  <div class="selbar" id="selbar"></div>
 
   <div class="tablecard">
     <div id="loader" class="loader">Loading bibliography…</div>
@@ -152,7 +162,7 @@ const HIDE_SM      = new Set(["Authors","Methods","Country"]);  // columns hidde
 const PAGE_SIZE    = 50;                                        // records per page
 
 let COLUMNS = [], PRIMARY = [], FACETS = [], SPAN_FIELDS = new Set();
-let rows = [], sortKey = "No", sortDir = 1, openId = null, page = 1, lastSig = "";
+let rows = [], sortKey = "No", sortDir = 1, openId = null, page = 1, lastSig = "", selected = new Set();
 
 function start(data, fields){
   rows = data.filter(r => Object.values(r).some(v => (v||"").trim() !== ""));
@@ -186,9 +196,14 @@ document.getElementById("file").addEventListener("change", e => {
 function buildHead(){
   const head = document.getElementById("head");
   head.innerHTML = "";
+  const selTh = document.createElement("th");
+  selTh.className = "selcol";
+  selTh.innerHTML = `<input type="checkbox" id="selall" title="Select all on this page">`;
+  head.appendChild(selTh);
   PRIMARY.forEach(c => {
     const th = document.createElement("th");
     th.textContent = c;
+    th.dataset.col = c;
     if(HIDE_SM.has(c)) th.className = "hide-sm";
     const a = document.createElement("span"); a.className = "arrow"; a.textContent = "▲";
     th.appendChild(a);
@@ -264,9 +279,10 @@ function render(){
   const startIdx = (page - 1) * PAGE_SIZE;
   const list = all.slice(startIdx, startIdx + PAGE_SIZE);
 
-  document.querySelectorAll("#head th").forEach((th,i) => {
-    th.classList.toggle("sorted", PRIMARY[i] === sortKey);
-    th.querySelector(".arrow").textContent = (PRIMARY[i]===sortKey && sortDir<0) ? "▼" : "▲";
+  document.querySelectorAll("#head th").forEach(th => {
+    if(!th.dataset.col) return;
+    th.classList.toggle("sorted", th.dataset.col === sortKey);
+    th.querySelector(".arrow").textContent = (th.dataset.col===sortKey && sortDir<0) ? "▼" : "▲";
   });
 
   document.getElementById("meta").innerHTML = all.length
@@ -274,8 +290,9 @@ function render(){
     : `Showing <b>0</b> of <b>${rows.length}</b> papers`;
 
   if(all.length === 0){
-    body.innerHTML = `<tr><td colspan="${PRIMARY.length}"><div class="empty-state">No papers match your filters.</div></td></tr>`;
+    body.innerHTML = `<tr><td colspan="${PRIMARY.length+1}"><div class="empty-state">No papers match your filters.</div></td></tr>`;
     renderPager(1);
+    renderSelbar();
     return;
   }
 
@@ -283,8 +300,15 @@ function render(){
     const id = r["No"] + "|" + r["Title"];
     const tr = document.createElement("tr");
     tr.className = "row" + (openId===id ? " open" : "");
-    tr.innerHTML = PRIMARY.map(c => cellHtml(r, c)).join("");
-    tr.onclick = () => { openId = (openId===id ? null : id); render(); };
+    const box = `<td class="selcol"><input type="checkbox" class="rowsel"${selected.has(id)?" checked":""}></td>`;
+    tr.innerHTML = box + PRIMARY.map(c => cellHtml(r, c)).join("");
+    tr.onclick = (e) => {
+      if(e.target.classList.contains("rowsel")){
+        if(e.target.checked) selected.add(id); else selected.delete(id);
+        renderSelbar(); syncSelall(list); return;
+      }
+      openId = (openId===id ? null : id); render();
+    };
     body.appendChild(tr);
 
     if(openId === id){
@@ -301,11 +325,53 @@ function render(){
           <div class="k">${esc(label)}</div>
           <div class="v ${v?"":"empty"}">${valHtml}</div></div>`;
       }).join("");
-      dt.innerHTML = `<td colspan="${PRIMARY.length}"><div class="detail-inner">${fields}</div></td>`;
+      dt.innerHTML = `<td colspan="${PRIMARY.length+1}"><div class="detail-inner">${fields}</div></td>`;
       body.appendChild(dt);
     }
   });
   renderPager(totalPages);
+  renderSelbar();
+
+  const selall = document.getElementById("selall");
+  syncSelall(list);
+  selall.onclick = () => {
+    const ids = list.map(r => r["No"] + "|" + r["Title"]);
+    if(selall.checked) ids.forEach(i => selected.add(i));
+    else ids.forEach(i => selected.delete(i));
+    render();
+  };
+}
+
+function syncSelall(list){
+  const selall = document.getElementById("selall");
+  if(!selall) return;
+  const ids = list.map(r => r["No"] + "|" + r["Title"]);
+  selall.checked = ids.length > 0 && ids.every(i => selected.has(i));
+}
+
+function renderSelbar(){
+  const bar = document.getElementById("selbar");
+  const n = selected.size;
+  if(!n){ bar.innerHTML = ""; return; }
+  bar.innerHTML = `<span>${n} selected</span>
+    <button id="dlsel">Download selected as CSV</button>
+    <button id="clrsel" class="ghost">Clear selection</button>`;
+  document.getElementById("dlsel").onclick = exportCsv;
+  document.getElementById("clrsel").onclick = () => { selected.clear(); render(); };
+}
+
+function exportCsv(){
+  const chosen = rows.filter(r => selected.has(r["No"] + "|" + r["Title"]));
+  if(!chosen.length) return;
+  const cell = s => { s = (s==null ? "" : String(s)); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; };
+  const lines = [COLUMNS.map(cell).join(",")];
+  chosen.forEach(r => lines.push(COLUMNS.map(c => cell(r[c])).join(",")));
+  const blob = new Blob(["\ufeff" + lines.join("\r\n")], {type:"text/csv;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "selected-papers.csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
 }
 
 function renderPager(totalPages){
