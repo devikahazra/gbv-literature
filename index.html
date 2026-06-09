@@ -137,6 +137,7 @@ const FACET_PREF   = ["Country","Methods","Context","Group Type","Journal"];
 const SPAN_PREF    = ["Title","Main Results","Theoretical Framework","Abstract","Notes","Gap/Difference","Outcome"];
 const DETAIL_SKIP  = new Set(["Authors"]);
 const LABELS       = {"Authors (full)":"Authors"};
+const LIST_FIELDS  = new Set(["Data Source"]);  // split on ";" into separate lines
 const HIDE_SM      = new Set(["Authors","Methods","Country"]);  // columns hidden on phones
 
 let COLUMNS = [], PRIMARY = [], FACETS = [], SPAN_FIELDS = new Set();
@@ -260,9 +261,13 @@ function render(){
       const fields = COLUMNS.filter(c => !DETAIL_SKIP.has(c)).map(c => {
         const v = (r[c]||"").trim();
         const label = LABELS[c] || c;
+        let valHtml = "—";
+        if(v) valHtml = LIST_FIELDS.has(c)
+          ? v.split(";").map(s=>esc(s.trim())).filter(Boolean).join("<br>")
+          : esc(v);
         return `<div class="field ${SPAN_FIELDS.has(c)?"span":""}">
           <div class="k">${esc(label)}</div>
-          <div class="v ${v?"":"empty"}">${v?esc(v):"—"}</div></div>`;
+          <div class="v ${v?"":"empty"}">${valHtml}</div></div>`;
       }).join("");
       dt.innerHTML = `<td colspan="${PRIMARY.length}"><div class="detail-inner">${fields}</div></td>`;
       body.appendChild(dt);
