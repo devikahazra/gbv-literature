@@ -10,8 +10,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
   :root{
-    --paper:#f4efe6; --card:#fffdf8; --ink:#1c1813; --muted:#6f665a;
-    --line:#e0d8c8; --line-2:#cdc3b0; --accent:#2a4a7c; --accent-soft:#e6ecf6;
+    --paper:#eef0f3; --card:#ffffff; --ink:#1a1c22; --muted:#626974;
+    --line:#e4e7ec; --line-2:#ccd2da; --accent:#2a4a7c; --accent-soft:#e6ecf6;
     --shadow:0 1px 2px rgba(40,30,20,.06),0 8px 24px rgba(40,30,20,.05);
   }
   *{box-sizing:border-box}
@@ -19,7 +19,7 @@
   body{
     background:var(--paper); color:var(--ink);
     font-family:"IBM Plex Sans",system-ui,sans-serif; font-size:15px; line-height:1.5;
-    background-image:radial-gradient(circle at 1px 1px,rgba(110,90,60,.05) 1px,transparent 0);
+    background-image:radial-gradient(circle at 1px 1px,rgba(60,75,100,.05) 1px,transparent 0);
     background-size:22px 22px;
   }
   .wrap{max-width:1180px; margin:0 auto; padding:48px 24px 80px}
@@ -72,7 +72,7 @@
   thead th.sorted .arrow{opacity:1; color:var(--accent)}
   tbody tr.row{border-bottom:1px solid var(--line); cursor:pointer; transition:background .12s}
   tbody tr.row:last-child{border-bottom:none}
-  tbody tr.row:hover{background:#faf5ec}
+  tbody tr.row:hover{background:#f3f5f8}
   tbody tr.row.open{background:var(--accent-soft)}
   td{padding:14px 16px; vertical-align:top}
   td.num{color:var(--muted); font-variant-numeric:tabular-nums; width:48px}
@@ -81,7 +81,7 @@
   td.year,td.country{white-space:nowrap; color:var(--muted); font-variant-numeric:tabular-nums}
   td.journal{max-width:120px; white-space:normal; word-wrap:break-word; color:var(--muted); font-size:13px}
   .pill{display:inline-block; padding:3px 9px; border-radius:999px; background:var(--accent-soft); color:var(--accent); font-size:12px; font-weight:500; white-space:nowrap}
-  tr.detail td{padding:0; background:#fbf7ef}
+  tr.detail td{padding:0; background:#f5f7fa}
   .detail-inner{padding:6px 22px 24px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px 40px}
   .field{min-width:0}
   .field .k{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); font-weight:600; margin-bottom:3px}
@@ -97,7 +97,7 @@
   .fallback label{display:inline-block; padding:11px 18px; border-radius:10px; background:var(--accent); color:#fff; cursor:pointer; font-weight:500}
   .fallback input{display:none}
   footer{margin-top:28px; color:var(--muted); font-size:13px}
-  footer code{background:#ece4d4; padding:2px 6px; border-radius:5px; font-size:12px}
+  footer code{background:#e6e9ee; padding:2px 6px; border-radius:5px; font-size:12px}
   @media(max-width:680px){
     .wrap{padding:32px 16px 60px}
     td.title{max-width:none}
