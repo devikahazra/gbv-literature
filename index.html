@@ -27,6 +27,7 @@
   .eyebrow{font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); font-weight:600; margin:0 0 10px}
   h1{font-family:"Fraunces",Georgia,serif; font-weight:500; font-size:clamp(30px,5vw,46px); line-height:1.05; margin:0 0 12px; letter-spacing:-.01em}
   .lede{color:var(--muted); max-width:60ch; margin:0; font-size:16px}
+  .disclaimer{color:var(--muted); max-width:60ch; margin:14px 0 0; font-size:13px; font-style:italic; padding-left:12px; border-left:2px solid var(--line-2)}
   .controls{display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:0 0 18px}
   .search{flex:1 1 280px; position:relative}
   .search input{
@@ -41,6 +42,11 @@
   }
   select:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
   #facetbox{display:contents}
+  .pager{display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-top:24px}
+  .pager button{min-width:40px; padding:9px 13px; border:1px solid var(--line-2); border-radius:9px; background:var(--card); color:var(--ink); font:inherit; cursor:pointer; transition:all .12s}
+  .pager button:hover:not(:disabled){border-color:var(--accent); color:var(--accent)}
+  .pager button.current{background:var(--accent); color:#fff; border-color:var(--accent)}
+  .pager button:disabled{opacity:.4; cursor:default}
   .clear{padding:11px 14px; border:1px solid var(--line-2); border-radius:10px; background:transparent; font:inherit; color:var(--muted); cursor:pointer}
   .clear:hover{border-color:var(--accent); color:var(--accent)}
   .meta{color:var(--muted); font-size:13px; margin:0 0 14px}
@@ -64,6 +70,7 @@
   td.title{font-weight:500; max-width:460px}
   td.authors{white-space:nowrap; color:var(--ink)}
   td.year,td.country{white-space:nowrap; color:var(--muted); font-variant-numeric:tabular-nums}
+  td.journal{max-width:120px; white-space:normal; word-wrap:break-word; color:var(--muted); font-size:13px}
   .pill{display:inline-block; padding:3px 9px; border-radius:999px; background:var(--accent-soft); color:var(--accent); font-size:12px; font-weight:500; white-space:nowrap}
   tr.detail td{padding:0; background:#fbf7ef}
   .detail-inner{padding:6px 22px 24px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px 40px}
@@ -94,6 +101,7 @@
     <p class="eyebrow">Literature Review</p>
     <h1>Gender-Based Violence</h1>
     <p class="lede">A structured, searchable bibliography. Click any row to expand the full record — identification strategy, methods, data, framework, and notes.</p>
+    <p class="disclaimer">Disclaimer: This is a working bibliography. Please verify all information and details against the original sources before use.</p>
   </header>
 
   <div class="controls">
@@ -119,6 +127,8 @@
     </table>
   </div>
 
+  <div id="pager" class="pager"></div>
+
   </div>
 
 <script>
@@ -137,11 +147,12 @@ const FACET_PREF   = ["Country","Methods","Year","Journal"];
 const SPAN_PREF    = ["Title","Main Results","Theoretical Framework","Abstract","Notes","Gap/Difference","Outcome"];
 const DETAIL_SKIP  = new Set(["Authors"]);
 const LABELS       = {"Authors (full)":"Authors"};
-const LIST_FIELDS  = new Set(["Data Sources"]);  // split on ";" into separate lines
+const LIST_FIELDS  = new Set(["Data Sources","Methods"]);  // split on ";" into separate lines
 const HIDE_SM      = new Set(["Authors","Methods","Country"]);  // columns hidden on phones
+const PAGE_SIZE    = 50;                                        // records per page
 
 let COLUMNS = [], PRIMARY = [], FACETS = [], SPAN_FIELDS = new Set();
-let rows = [], sortKey = "No", sortDir = 1, openId = null;
+let rows = [], sortKey = "No", sortDir = 1, openId = null, page = 1, lastSig = "";
 
 function start(data, fields){
   rows = data.filter(r => Object.values(r).some(v => (v||"").trim() !== ""));
@@ -186,13 +197,17 @@ function buildHead(){
   });
 }
 
+function tokens(val){ return (val||"").split(";").map(s => s.trim()).filter(Boolean); }
+
 function buildFacets(){
   const box = document.getElementById("facetbox");
   box.innerHTML = "";
   FACETS.forEach(c => {
     const sel = document.createElement("select");
     sel.id = "f-" + c;
-    const vals = [...new Set(rows.map(r => (r[c]||"").trim()).filter(Boolean))].sort();
+    const vals = LIST_FIELDS.has(c)
+      ? [...new Set(rows.flatMap(r => tokens(r[c])))].sort()
+      : [...new Set(rows.map(r => (r[c]||"").trim()).filter(Boolean))].sort();
     sel.innerHTML = `<option value="">All ${esc(c)}</option>` + vals.map(v=>`<option>${esc(v)}</option>`).join("");
     sel.onchange = render;
     box.appendChild(sel);
@@ -211,7 +226,11 @@ function filtered(){
   const q = document.getElementById("q").value.toLowerCase().trim();
   const fv = {}; FACETS.forEach(c => { const s = document.getElementById("f-"+c); fv[c] = s ? s.value : ""; });
   return rows.filter(r => {
-    for(const c of FACETS) if(fv[c] && (r[c]||"").trim() !== fv[c]) return false;
+    for(const c of FACETS){
+      if(!fv[c]) continue;
+      if(LIST_FIELDS.has(c)){ if(!tokens(r[c]).includes(fv[c])) return false; }
+      else if((r[c]||"").trim() !== fv[c]) return false;
+    }
     if(q && !COLUMNS.some(c => (r[c]||"").toLowerCase().includes(q))) return false;
     return true;
   });
@@ -230,20 +249,33 @@ function sorted(list){
 }
 
 function render(){
-  const list = sorted(filtered());
+  const all = sorted(filtered());
   const body = document.getElementById("body");
   body.innerHTML = "";
+
+  // Reset to page 1 whenever the search/filter/sort state changes (not when expanding a row)
+  const sig = document.getElementById("q").value + "|" +
+    FACETS.map(c => { const s = document.getElementById("f-"+c); return s ? s.value : ""; }).join("|") +
+    "|" + sortKey + "|" + sortDir;
+  if(sig !== lastSig){ page = 1; lastSig = sig; }
+
+  const totalPages = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
+  if(page > totalPages) page = totalPages;
+  const startIdx = (page - 1) * PAGE_SIZE;
+  const list = all.slice(startIdx, startIdx + PAGE_SIZE);
 
   document.querySelectorAll("#head th").forEach((th,i) => {
     th.classList.toggle("sorted", PRIMARY[i] === sortKey);
     th.querySelector(".arrow").textContent = (PRIMARY[i]===sortKey && sortDir<0) ? "▼" : "▲";
   });
 
-  document.getElementById("meta").innerHTML =
-    `Showing <b>${list.length}</b> of <b>${rows.length}</b> ${rows.length===1?"paper":"papers"}`;
+  document.getElementById("meta").innerHTML = all.length
+    ? `Showing <b>${startIdx+1}–${startIdx+list.length}</b> of <b>${all.length}</b> ${all.length===1?"paper":"papers"}`
+    : `Showing <b>0</b> of <b>${rows.length}</b> papers`;
 
-  if(list.length === 0){
+  if(all.length === 0){
     body.innerHTML = `<tr><td colspan="${PRIMARY.length}"><div class="empty-state">No papers match your filters.</div></td></tr>`;
+    renderPager(1);
     return;
   }
 
@@ -273,6 +305,23 @@ function render(){
       body.appendChild(dt);
     }
   });
+  renderPager(totalPages);
+}
+
+function renderPager(totalPages){
+  const pager = document.getElementById("pager");
+  if(totalPages <= 1){ pager.innerHTML = ""; return; }
+  let html = `<button ${page<=1?"disabled":""} data-pg="${page-1}">‹ Prev</button>`;
+  for(let p=1; p<=totalPages; p++)
+    html += `<button class="${p===page?"current":""}" data-pg="${p}">${p}</button>`;
+  html += `<button ${page>=totalPages?"disabled":""} data-pg="${page+1}">Next ›</button>`;
+  pager.innerHTML = html;
+  pager.querySelectorAll("button[data-pg]").forEach(b => {
+    b.onclick = () => {
+      const p = +b.dataset.pg;
+      if(p>=1 && p<=totalPages){ page = p; openId = null; render(); window.scrollTo({top:0,behavior:"smooth"}); }
+    };
+  });
 }
 
 function cellHtml(r, c){
@@ -283,6 +332,7 @@ function cellHtml(r, c){
   if(c === "Authors") return `<td class="authors${sm}">${v}</td>`;
   if(c === "Year")    return `<td class="year">${v}</td>`;
   if(c === "Country") return `<td class="country${sm}">${v}</td>`;
+  if(c === "Journal") return `<td class="journal${sm}">${v}</td>`;
   if(c === "Methods") return `<td class="${sm.trim()}">${v}</td>`;;
   return `<td class="${sm.trim()}">${v}</td>`;
 }
