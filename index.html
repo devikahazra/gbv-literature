@@ -28,6 +28,9 @@
   h1{font-family:"Fraunces",Georgia,serif; font-weight:500; font-size:clamp(30px,5vw,46px); line-height:1.05; margin:0 0 12px; letter-spacing:-.01em}
   .lede{color:var(--muted); max-width:60ch; margin:0; font-size:16px}
   .disclaimer{color:var(--muted); max-width:60ch; margin:14px 0 0; font-size:13px; font-style:italic; padding-left:12px; border-left:2px solid var(--line-2)}
+  .submit-note{color:var(--ink); max-width:60ch; margin:14px 0 0; font-size:15px}
+  .submit-note a{color:var(--accent); text-decoration:none; font-weight:500; border-bottom:1px solid var(--accent)}
+  .submit-note a:hover{border-bottom-color:transparent}
   .controls{display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:0 0 18px}
   .search{flex:1 1 280px; position:relative}
   .search input{
@@ -98,11 +101,57 @@
   .fallback input{display:none}
   footer{margin-top:28px; color:var(--muted); font-size:13px}
   footer code{background:#e6e9ee; padding:2px 6px; border-radius:5px; font-size:12px}
+
+  .form-section{margin-top:60px; padding-top:28px; border-top:1px solid var(--line-2)}
+  .form-section h2{font-family:"Fraunces",Georgia,serif; font-weight:500; font-size:clamp(24px,5vw,32px); line-height:1.05; margin:0 0 12px; letter-spacing:-.01em}
+  .form-section p{color:var(--muted); max-width:60ch; margin:0 0 24px; font-size:15px}
+  .form-card{background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); padding:32px}
+  .form-group{margin-bottom:24px}
+  .form-group:last-of-type{margin-bottom:0}
+  label{display:block; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); font-weight:600; margin-bottom:8px}
+  input[type="text"],
+  input[type="number"],
+  input[type="url"],
+  textarea,
+  select{
+    width:100%; padding:12px 14px; border:1px solid var(--line-2);
+    border-radius:10px; background:var(--card); font:inherit; color:var(--ink);
+    font-size:15px;
+  }
+  input[type="text"]:focus,
+  input[type="number"]:focus,
+  input[type="url"]:focus,
+  textarea:focus,
+  select:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
+  textarea{resize:vertical; min-height:100px}
+  .authors-container{display:flex; flex-direction:column; gap:12px}
+  .author-row{display:flex; gap:10px; align-items:flex-end}
+  .author-row input{flex:1}
+  .btn-remove{padding:12px 14px; border:1px solid var(--line-2); border-radius:10px; background:transparent; color:var(--muted); cursor:pointer; font-size:14px; white-space:nowrap; transition:all .12s}
+  .btn-remove:hover{border-color:#d9534f; color:#d9534f}
+  .btn-add-author{padding:10px 14px; border:1px solid var(--accent); border-radius:10px; background:transparent; color:var(--accent); cursor:pointer; font-size:14px; font-weight:500; transition:all .12s; margin-top:8px}
+  .btn-add-author:hover{background:var(--accent-soft)}
+  .optional-note{font-size:12px; color:var(--muted); margin-top:4px}
+  .form-actions{display:flex; gap:12px; margin-top:32px}
+  .btn-submit{flex:1; padding:14px 24px; border:none; border-radius:10px; background:var(--accent); color:#fff; font:inherit; font-size:15px; font-weight:500; cursor:pointer; transition:all .12s}
+  .btn-submit:hover{filter:brightness(1.08)}
+  .btn-submit:disabled{opacity:.6; cursor:default}
+  .btn-reset{padding:14px 24px; border:1px solid var(--line-2); border-radius:10px; background:transparent; color:var(--muted); cursor:pointer; font:inherit; font-size:15px; transition:all .12s}
+  .btn-reset:hover{border-color:var(--accent); color:var(--accent)}
+  .alert{padding:14px 16px; border-radius:10px; margin-bottom:24px; font-size:14px}
+  .alert.success{background:#d4edda; color:#155724; border:1px solid #c3e6cb}
+  .alert.error{background:#f8d7da; color:#721c24; border:1px solid #f5c6cb}
+  .alert.hidden{display:none}
+
   @media(max-width:680px){
     .wrap{padding:32px 16px 60px}
     td.title{max-width:none}
     .hide-sm{display:none}
     .detail-inner{grid-template-columns:1fr; padding:6px 16px 20px}
+    .form-card{padding:24px}
+    .author-row{flex-direction:column}
+    .author-row input{width:100%}
+    .btn-remove{width:100%}
   }
 </style>
 </head>
@@ -113,6 +162,7 @@
     <h1>Gender-Based Violence</h1>
     <p class="lede">A structured, searchable bibliography. Click any row to expand the full record — identification strategy, methods, data, framework, and notes.</p>
     <p class="disclaimer">Disclaimer: This is a working bibliography. Please verify all information and details against the original sources before use.</p>
+    <p class="submit-note">Found a paper we're missing? <a href="#submit-form">Submit it below</a>.</p>
   </header>
 
   <div class="controls">
@@ -141,185 +191,313 @@
 
   <div id="pager" class="pager"></div>
 
+  <div id="submit-form" class="form-section">
+    <h2>Submit a Paper</h2>
+    <p>Help us build a comprehensive GBV literature review by sharing papers you think we should include.</p>
+    
+    <div class="form-card">
+      <div id="alert" class="alert hidden"></div>
+
+      <form id="form">
+        <div class="form-group">
+          <label>Full Author Names *</label>
+          <div class="authors-container" id="authorsContainer">
+            <input type="text" class="author-input" placeholder="First author" required>
+          </div>
+          <button type="button" class="btn-add-author" id="addAuthor">+ Add another author</button>
+        </div>
+
+        <div class="form-group">
+          <label>Title of Paper *</label>
+          <input type="text" name="title" placeholder="Enter the full paper title" required>
+        </div>
+
+        <div class="form-group">
+          <label>Year *</label>
+          <input type="number" name="year" placeholder="e.g., 2023" min="1900" max="2100" required>
+        </div>
+
+        <div class="form-group">
+          <label>Journal *</label>
+          <input type="text" name="journal" placeholder="Journal or publication name" required>
+        </div>
+
+        <div class="form-group">
+          <label>Main Result *</label>
+          <textarea name="mainResult" placeholder="Brief summary of the key finding" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Identification Strategy *</label>
+          <input type="text" name="identification" placeholder="e.g., Instrumental variables, RCT, quasi-experimental design" required>
+        </div>
+
+        <div class="form-group">
+          <label>Method Used *</label>
+          <input type="text" name="methodUsed" placeholder="e.g., OLS regression, DiD, TWFE" required>
+        </div>
+
+        <div class="form-group">
+          <label>Abstract *</label>
+          <textarea name="abstract" placeholder="Paper abstract or summary" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Paper Link *</label>
+          <input type="url" name="paperLink" placeholder="https://doi.org/... or link to PDF" required>
+        </div>
+
+        <div class="form-group">
+          <label>Website / Contact Info</label>
+          <input type="text" name="website" placeholder="Your website or email (optional)">
+          <p class="optional-note">Optional — helps us acknowledge your contribution</p>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-submit">Submit Paper</button>
+          <button type="reset" class="btn-reset">Clear</button>
+        </div>
+      </form>
+    </div>
   </div>
 
+  </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script>
-/* ---------------------------------------------------------------------------
-   The page reads its columns from the CSV header — edit data/papers.csv only.
-   The lists below are just PREFERENCES; any column not present is ignored, and
-   columns are matched by their exact header name.
-   - PRIMARY_PREF : which columns appear in the compact table (if present)
-   - FACET_PREF   : which columns get a filter dropdown (if present)
-   - SPAN_PREF    : long text columns that span full width in the expanded card
-   - DETAIL_SKIP  : columns hidden from the expanded card
-   - LABELS       : rename a column's label in the expanded card only
---------------------------------------------------------------------------- */
-const PRIMARY_PREF = ["Authors","Title","Year","Journal","Country"];
-const FACET_PREF   = ["Country","Methods","Year","Journal"];
-const SPAN_PREF    = ["Title","Main Results","Theoretical Framework","Abstract","Notes","Gap/Difference","Outcome"];
-const DETAIL_SKIP  = new Set(["Authors"]);
-const LABELS       = {"Authors (full)":"Authors"};
-const LIST_FIELDS  = new Set(["Data Sources","Methods"]);  // split on ";" into separate lines
-const LINK_FIELDS  = new Set(["Link"]);                    // render as a clickable hyperlink
-const HIDE_SM      = new Set(["Authors","Methods","Country"]);  // columns hidden on phones
-const PAGE_SIZE    = 50;                                        // records per page
+const GOOGLE_APPS_SCRIPT_URL = "https://script.googleapis.com/macros/s/AKfycbxMaU-8YShlmSQ1_jamMZNg1yV_8jWjdIhtWtFDUx2tNFahYmSpQX3B_P9KaBej7XpU/exec";
 
-let COLUMNS = [], PRIMARY = [], FACETS = [], SPAN_FIELDS = new Set();
-let rows = [], sortKey = "No", sortDir = 1, openId = null, page = 1, lastSig = "", selected = new Set();
+const addAuthorBtn = document.getElementById("addAuthor");
+const authorsContainer = document.getElementById("authorsContainer");
+const form = document.getElementById("form");
+const alertBox = document.getElementById("alert");
 
-function start(data, fields){
-  rows = data.filter(r => Object.values(r).some(v => (v||"").trim() !== ""));
-  COLUMNS = (fields && fields.length) ? fields : (rows[0] ? Object.keys(rows[0]) : []);
-  PRIMARY = PRIMARY_PREF.filter(c => COLUMNS.includes(c));
-  if(!PRIMARY.length) PRIMARY = COLUMNS.slice(0, 6);          // fallback: first few columns
-  FACETS  = FACET_PREF.filter(c => COLUMNS.includes(c));
-  SPAN_FIELDS = new Set(SPAN_PREF.filter(c => COLUMNS.includes(c)));
-  sortKey = PRIMARY.includes("No") ? "No" : PRIMARY[0];
-  document.getElementById("loader").style.display = "none";
-  document.getElementById("table").style.display = "";
-  buildHead(); buildFacets(); render();
-}
-
-fetch("data/papers.csv")
-  .then(r => { if(!r.ok) throw new Error(); return r.text(); })
-  .then(t => { const p = Papa.parse(t, {header:true, skipEmptyLines:true}); start(p.data, p.meta.fields); })
-  .catch(() => {
-    document.getElementById("loader").style.display = "none";
-    document.getElementById("fallback").style.display = "block";
+addAuthorBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "author-input";
+  input.placeholder = "Additional author";
+  
+  const wrapper = document.createElement("div");
+  wrapper.style.display = "flex";
+  wrapper.style.gap = "10px";
+  wrapper.style.alignItems = "flex-end";
+  
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn-remove";
+  btn.textContent = "Remove";
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    wrapper.remove();
   });
-
-document.getElementById("file").addEventListener("change", e => {
-  const f = e.target.files[0]; if(!f) return;
-  Papa.parse(f, {header:true, skipEmptyLines:true, complete: p => {
-    document.getElementById("fallback").style.display = "none";
-    start(p.data, p.meta.fields);
-  }});
+  
+  wrapper.appendChild(input);
+  wrapper.appendChild(btn);
+  authorsContainer.appendChild(wrapper);
 });
 
-function buildHead(){
-  const head = document.getElementById("head");
-  head.innerHTML = "";
-  const selTh = document.createElement("th");
-  selTh.className = "selcol";
-  selTh.innerHTML = `<input type="checkbox" id="selall" title="Select all on this page">`;
-  head.appendChild(selTh);
-  PRIMARY.forEach(c => {
-    const th = document.createElement("th");
-    th.textContent = c;
-    th.dataset.col = c;
-    if(HIDE_SM.has(c)) th.className = "hide-sm";
-    const a = document.createElement("span"); a.className = "arrow"; a.textContent = "▲";
-    th.appendChild(a);
-    th.onclick = () => { sortDir = sortKey === c ? -sortDir : 1; sortKey = c; render(); };
-    head.appendChild(th);
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  
+  const authors = Array.from(document.querySelectorAll(".author-input"))
+    .map(input => input.value.trim())
+    .filter(Boolean)
+    .join("; ");
+  
+  if(!authors){
+    showAlert("Please enter at least one author name.", "error");
+    return;
+  }
+  
+  const formData = {
+    authors: authors,
+    title: form.title.value.trim(),
+    year: form.year.value.trim(),
+    journal: form.journal.value.trim(),
+    mainResult: form.mainResult.value.trim(),
+    identification: form.identification.value.trim(),
+    methodUsed: form.methodUsed.value.trim(),
+    abstract: form.abstract.value.trim(),
+    paperLink: form.paperLink.value.trim(),
+    website: form.website.value.trim()
+  };
+  
+  try {
+    const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify(formData)
+    });
+    
+    const result = await response.json();
+    
+    if(result.success){
+      showAlert("Thank you! Your submission has been received. We'll review it shortly.", "success");
+      form.reset();
+      authorsContainer.innerHTML = '<input type="text" class="author-input" placeholder="First author" required>';
+    } else {
+      showAlert("Something went wrong. Please try again.", "error");
+    }
+  } catch(error) {
+    console.error("Error:", error);
+    showAlert("Network error. Please check your connection and try again.", "error");
+  }
+});
+
+function showAlert(message, type){
+  alertBox.textContent = message;
+  alertBox.className = "alert " + type;
+  window.scrollTo({top: alertBox.offsetTop - 20, behavior: "smooth"});
+}
+
+/* Literature review table code follows */
+const PAGE_SIZE = 20;
+let rows = [], page = 1, sortKey = "No", sortDir = 1, openId = null, query = "", filters = {}, selected = new Set();
+
+const COLUMNS = [];
+const PRIMARY_PREF = ["No","Title","Authors","Year","Journal"];
+const FACET_PREF = ["Year","Method Used","Identification"];
+const SPAN_FIELDS = new Set(["Abstract","Main Result"]);
+const DETAIL_SKIP = new Set();
+const LABELS = {};
+const LINK_FIELDS = new Set(["Paper Link"]);
+const LIST_FIELDS = new Set([]);
+const HIDE_SM = new Set(["Authors","Country","Journal","Methods"]);
+let PRIMARY = [];
+
+async function initTable(){
+  const loader = document.getElementById("loader");
+  const fallback = document.getElementById("fallback");
+  const fileInput = document.getElementById("file");
+  try{
+    const csv = await fetch("data/papers.csv").then(r=>r.text());
+    parseCsv(csv);
+  }catch(e){
+    loader.style.display = "none";
+    fallback.style.display = "block";
+    fileInput.addEventListener("change", e=>{
+      const reader = new FileReader();
+      reader.onload = f => parseCsv(f.target.result);
+      reader.readAsText(e.target.files[0]);
+    });
+  }
+}
+
+function parseCsv(text){
+  Papa.parse(text, {
+    header: true,
+    skipEmptyLines: true,
+    complete: (r)=>{
+      rows = r.data.filter(row => Object.values(row).some(v=>v));
+      if(!rows.length) return;
+      COLUMNS.length = 0;
+      COLUMNS.push(...Object.keys(rows[0]));
+      PRIMARY = PRIMARY_PREF.filter(c=>COLUMNS.includes(c));
+      renderTable();
+      setupControls();
+      document.getElementById("loader").style.display = "none";
+      document.getElementById("table").style.display = "table";
+    }
   });
 }
 
-function tokens(val){ return (val||"").split(";").map(s => s.trim()).filter(Boolean); }
-
-function buildFacets(){
+function setupControls(){
+  const facets = FACET_PREF.filter(c=>COLUMNS.includes(c));
   const box = document.getElementById("facetbox");
-  box.innerHTML = "";
-  FACETS.forEach(c => {
+  facets.forEach(f=>{
+    const vals = [...new Set(rows.map(r=>r[f]||"").filter(Boolean))].sort();
     const sel = document.createElement("select");
-    sel.id = "f-" + c;
-    const vals = LIST_FIELDS.has(c)
-      ? [...new Set(rows.flatMap(r => tokens(r[c])))].sort()
-      : [...new Set(rows.map(r => (r[c]||"").trim()).filter(Boolean))].sort();
-    sel.innerHTML = `<option value="">All ${esc(c)}</option>` + vals.map(v=>`<option>${esc(v)}</option>`).join("");
-    sel.onchange = render;
+    sel.innerHTML = `<option value="">${f}</option>` + vals.map(v=>`<option value="${v}">${v}</option>`).join("");
+    sel.addEventListener("change",e=>{
+      filters[f] = e.target.value;
+      page = 1; renderTable();
+    });
     box.appendChild(sel);
   });
-  document.getElementById("q").oninput = render;
-  document.getElementById("clear").onclick = () => {
+  document.getElementById("q").addEventListener("input",e=>{
+    query = e.target.value.toLowerCase();
+    page = 1; renderTable();
+  });
+  document.getElementById("clear").addEventListener("click",()=>{
+    query = ""; filters = {}; page = 1;
+    document.querySelectorAll("select").forEach(s=>s.value="");
     document.getElementById("q").value = "";
-    FACETS.forEach(c => { const s = document.getElementById("f-"+c); if(s) s.value = ""; });
-    render();
-  };
-}
-
-function esc(s){return (s||"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));}
-
-function filtered(){
-  const q = document.getElementById("q").value.toLowerCase().trim();
-  const fv = {}; FACETS.forEach(c => { const s = document.getElementById("f-"+c); fv[c] = s ? s.value : ""; });
-  return rows.filter(r => {
-    for(const c of FACETS){
-      if(!fv[c]) continue;
-      if(LIST_FIELDS.has(c)){ if(!tokens(r[c]).includes(fv[c])) return false; }
-      else if((r[c]||"").trim() !== fv[c]) return false;
-    }
-    if(q && !COLUMNS.some(c => (r[c]||"").toLowerCase().includes(q))) return false;
-    return true;
+    renderTable();
   });
 }
 
-function sorted(list){
-  return [...list].sort((a,b) => {
-    let x = (a[sortKey]||""), y = (b[sortKey]||"");
-    if(sortKey === "No" || sortKey === "Year"){
-      const nx = parseFloat(x), ny = parseFloat(y);
-      const ax = isNaN(nx) ? Infinity : nx, ay = isNaN(ny) ? Infinity : ny;
-      return (ax - ay) * sortDir;
-    }
-    return x.localeCompare(y) * sortDir;
+function renderTable(){
+  const all = rows.filter(r=>{
+    if(query && !COLUMNS.some(c=>(r[c]||"").toLowerCase().includes(query))) return false;
+    return Object.entries(filters).every(([k,v])=>!v || r[k]===v);
   });
-}
-
-function render(){
-  const all = sorted(filtered());
-  const body = document.getElementById("body");
-  body.innerHTML = "";
-
-  // Reset to page 1 whenever the search/filter/sort state changes (not when expanding a row)
-  const sig = document.getElementById("q").value + "|" +
-    FACETS.map(c => { const s = document.getElementById("f-"+c); return s ? s.value : ""; }).join("|") +
-    "|" + sortKey + "|" + sortDir;
-  if(sig !== lastSig){ page = 1; lastSig = sig; }
-
-  const totalPages = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
+  
+  const sorted = [...all].sort((a,b)=>{
+    const av = (a[sortKey]||""), bv = (b[sortKey]||"");
+    const cmp = isNaN(av) ? av.localeCompare(bv) : av-bv;
+    return sortDir * cmp;
+  });
+  
+  const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
   if(page > totalPages) page = totalPages;
-  const startIdx = (page - 1) * PAGE_SIZE;
-  const list = all.slice(startIdx, startIdx + PAGE_SIZE);
-
-  document.querySelectorAll("#head th").forEach(th => {
+  const startIdx = (page-1)*PAGE_SIZE;
+  const list = sorted.slice(startIdx, startIdx+PAGE_SIZE);
+  
+  document.querySelectorAll("#head th").forEach(th=>{
     if(!th.dataset.col) return;
-    th.classList.toggle("sorted", th.dataset.col === sortKey);
+    th.classList.toggle("sorted", th.dataset.col===sortKey);
     th.querySelector(".arrow").textContent = (th.dataset.col===sortKey && sortDir<0) ? "▼" : "▲";
   });
-
+  
   document.getElementById("meta").innerHTML = all.length
     ? `Showing <b>${startIdx+1}–${startIdx+list.length}</b> of <b>${all.length}</b> ${all.length===1?"paper":"papers"}`
     : `Showing <b>0</b> of <b>${rows.length}</b> papers`;
-
-  if(all.length === 0){
+  
+  const body = document.getElementById("body");
+  if(all.length===0){
     body.innerHTML = `<tr><td colspan="${PRIMARY.length+1}"><div class="empty-state">No papers match your filters.</div></td></tr>`;
     renderPager(1);
     renderSelbar();
     return;
   }
-
-  list.forEach(r => {
-    const id = r["No"] + "|" + r["Title"];
+  
+  body.innerHTML = "";
+  const head = document.getElementById("head");
+  if(head.children.length===0){
+    head.innerHTML = `<th class="selcol"><input type="checkbox" id="selall"></th>` +
+      PRIMARY.map(c=>`<th data-col="${c}">${c} <span class="arrow"></span></th>`).join("");
+    head.querySelectorAll("th[data-col]").forEach(th=>{
+      th.style.cursor = "pointer";
+      th.addEventListener("click",()=>{
+        sortKey = th.dataset.col;
+        sortDir = (sortKey===th.dataset.col) ? -sortDir : 1;
+        renderTable();
+      });
+    });
+  }
+  
+  list.forEach(r=>{
+    const id = r["No"]+"|"+r["Title"];
     const tr = document.createElement("tr");
     tr.className = "row" + (openId===id ? " open" : "");
-    const box = `<td class="selcol"><input type="checkbox" class="rowsel"${selected.has(id)?" checked":""}></td>`;
-    tr.innerHTML = box + PRIMARY.map(c => cellHtml(r, c)).join("");
-    tr.onclick = (e) => {
+    tr.innerHTML = `<td class="selcol"><input type="checkbox" class="rowsel"${selected.has(id)?" checked":""}></td>` +
+      PRIMARY.map(c=>cellHtml(r,c)).join("");
+    tr.onclick = e=>{
       if(e.target.classList.contains("rowsel")){
         if(e.target.checked) selected.add(id); else selected.delete(id);
         renderSelbar(); syncSelall(list); return;
       }
-      openId = (openId===id ? null : id); render();
+      openId = (openId===id ? null : id); renderTable();
     };
     body.appendChild(tr);
-
-    if(openId === id){
+    
+    if(openId===id){
       const dt = document.createElement("tr");
       dt.className = "detail";
-      const fields = COLUMNS.filter(c => !DETAIL_SKIP.has(c)).map(c => {
+      const fields = COLUMNS.filter(c=>!DETAIL_SKIP.has(c)).map(c=>{
         const v = (r[c]||"").trim();
-        const label = LABELS[c] || c;
+        const label = LABELS[c]||c;
         let valHtml = "—";
         if(v) valHtml = LINK_FIELDS.has(c)
           ? `<a href="${esc(v)}" target="_blank" rel="noopener noreferrer">View paper ↗</a>`
@@ -336,100 +514,98 @@ function render(){
   });
   renderPager(totalPages);
   renderSelbar();
-
+  
   const selall = document.getElementById("selall");
   syncSelall(list);
-  selall.onclick = () => {
-    const ids = list.map(r => r["No"] + "|" + r["Title"]);
-    if(selall.checked) ids.forEach(i => selected.add(i));
-    else ids.forEach(i => selected.delete(i));
-    render();
+  selall.onclick = ()=>{
+    const ids = list.map(r=>r["No"]+"|"+r["Title"]);
+    if(selall.checked) ids.forEach(i=>selected.add(i));
+    else ids.forEach(i=>selected.delete(i));
+    renderTable();
   };
 }
 
 function syncSelall(list){
   const selall = document.getElementById("selall");
   if(!selall) return;
-  const ids = list.map(r => r["No"] + "|" + r["Title"]);
-  selall.checked = ids.length > 0 && ids.every(i => selected.has(i));
+  const ids = list.map(r=>r["No"]+"|"+r["Title"]);
+  selall.checked = ids.length>0 && ids.every(i=>selected.has(i));
 }
 
 function renderSelbar(){
   const bar = document.getElementById("selbar");
   const n = selected.size;
   if(!n){ bar.innerHTML = ""; return; }
-  bar.innerHTML = `<span>${n} selected</span>
-    <button id="dlsel">Download CSV</button>
-    <button id="clrsel" class="ghost">Clear selection</button>`;
+  bar.innerHTML = `<span>${n} selected</span><button id="dlsel">Download CSV</button><button id="clrsel" class="ghost">Clear selection</button>`;
   document.getElementById("dlsel").onclick = exportCsv;
-  document.getElementById("clrsel").onclick = () => { selected.clear(); render(); };
+  document.getElementById("clrsel").onclick = ()=>{ selected.clear(); renderTable(); };
 }
 
 async function exportCsv(){
-  const chosen = rows.filter(r => selected.has(r["No"] + "|" + r["Title"]));
+  const chosen = rows.filter(r=>selected.has(r["No"]+"|"+r["Title"]));
   if(!chosen.length) return;
-  const cell = s => { s = (s==null ? "" : String(s)); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; };
+  const cell = s=>{ s = (s==null?"":String(s)); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
   const lines = [COLUMNS.map(cell).join(",")];
-  chosen.forEach(r => lines.push(COLUMNS.map(c => cell(r[c])).join(",")));
-  const csv = "\ufeff" + lines.join("\r\n");
-
-  // Chrome / Edge: native "Save As" box (name + choose folder).
+  chosen.forEach(r=>lines.push(COLUMNS.map(c=>cell(r[c])).join(",")));
+  const csv = "\ufeff"+lines.join("\r\n");
   if(window.showSaveFilePicker){
     try{
-      const handle = await window.showSaveFilePicker({
-        suggestedName: "selected-papers.csv",
-        types: [{description:"CSV file", accept:{"text/csv":[".csv"]}}]
-      });
+      const handle = await window.showSaveFilePicker({suggestedName:"selected-papers.csv",types:[{description:"CSV file",accept:{"text/csv":[".csv"]}}]});
       const w = await handle.createWritable();
       await w.write(csv); await w.close();
       return;
     }catch(err){
-      if(err && err.name === "AbortError") return;   // user cancelled
-      // otherwise fall through to the prompt-based download
+      if(err&&err.name==="AbortError") return;
     }
   }
-
-  // Safari / Firefox: ask for a name, then download.
-  let name = window.prompt("Name your CSV file:", "selected-papers");
-  if(name === null) return;                          // user cancelled
-  name = name.trim().replace(/[\\/:*?"<>|]+/g, "-") || "selected-papers";
-  if(!/\.csv$/i.test(name)) name += ".csv";
-  const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+  let name = window.prompt("Name your CSV file:","selected-papers");
+  if(name===null) return;
+  name = name.trim().replace(/[\\/:*?"<>|]+/g,"-")||"selected-papers";
+  if(!/\.csv$/i.test(name)) name+=".csv";
+  const blob = new Blob([csv],{type:"text/csv;charset=utf-8"});
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url; a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);  // keep blob alive so Safari names it correctly
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
 
 function renderPager(totalPages){
   const pager = document.getElementById("pager");
-  if(totalPages <= 1){ pager.innerHTML = ""; return; }
+  if(totalPages<=1){ pager.innerHTML = ""; return; }
   let html = `<button ${page<=1?"disabled":""} data-pg="${page-1}">‹ Prev</button>`;
   for(let p=1; p<=totalPages; p++)
     html += `<button class="${p===page?"current":""}" data-pg="${p}">${p}</button>`;
   html += `<button ${page>=totalPages?"disabled":""} data-pg="${page+1}">Next ›</button>`;
   pager.innerHTML = html;
-  pager.querySelectorAll("button[data-pg]").forEach(b => {
-    b.onclick = () => {
+  pager.querySelectorAll("button[data-pg]").forEach(b=>{
+    b.onclick = ()=>{
       const p = +b.dataset.pg;
-      if(p>=1 && p<=totalPages){ page = p; openId = null; render(); window.scrollTo({top:0,behavior:"smooth"}); }
+      if(p>=1 && p<=totalPages){ page = p; openId = null; renderTable(); window.scrollTo({top:0,behavior:"smooth"}); }
     };
   });
 }
 
-function cellHtml(r, c){
-  const v = esc(r[c] || "");
+function cellHtml(r,c){
+  const v = esc(r[c]||"");
   const sm = HIDE_SM.has(c) ? " hide-sm" : "";
-  if(c === "No")      return `<td class="num">${v}</td>`;
-  if(c === "Title")   return `<td class="title">${v}</td>`;
-  if(c === "Authors") return `<td class="authors${sm}">${v}</td>`;
-  if(c === "Year")    return `<td class="year">${v}</td>`;
-  if(c === "Country") return `<td class="country${sm}">${v}</td>`;
-  if(c === "Journal") return `<td class="journal${sm}">${v}</td>`;
-  if(c === "Methods") return `<td class="${sm.trim()}">${v}</td>`;;
+  if(c==="No") return `<td class="num">${v}</td>`;
+  if(c==="Title") return `<td class="title">${v}</td>`;
+  if(c==="Authors") return `<td class="authors${sm}">${v}</td>`;
+  if(c==="Year") return `<td class="year">${v}</td>`;
+  if(c==="Country") return `<td class="country${sm}">${v}</td>`;
+  if(c==="Journal") return `<td class="journal${sm}">${v}</td>`;
+  if(c==="Methods") return `<td class="${sm.trim()}">${v}</td>`;
   return `<td class="${sm.trim()}">${v}</td>`;
 }
+
+function esc(s){
+  const div = document.createElement("div");
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+initTable();
 </script>
 </body>
 </html>
