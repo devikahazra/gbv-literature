@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Submit to GBV Literature Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#eef0f3; --card:#ffffff; --ink:#1a1c22; --muted:#626974;
+    --line:#e4e7ec; --line-2:#ccd2da; --accent:#2a4a7c; --accent-soft:#e6ecf6;
+    --shadow:0 1px 2px rgba(40,30,20,.06),0 8px 24px rgba(40,30,20,.05);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,sans-serif; font-size:15px; line-height:1.5;
+    background-image:radial-gradient(circle at 1px 1px,rgba(60,75,100,.05) 1px,transparent 0);
+    background-size:22px 22px;
+  }
+  .wrap{max-width:780px; margin:0 auto; padding:48px 24px 80px}
+  header{border-bottom:1px solid var(--line-2); padding-bottom:28px; margin-bottom:32px}
+  .eyebrow{font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); font-weight:600; margin:0 0 10px}
+  h1{font-family:"Fraunces",Georgia,serif; font-weight:500; font-size:clamp(28px,5vw,40px); line-height:1.05; margin:0 0 12px; letter-spacing:-.01em}
+  .lede{color:var(--muted); margin:0; font-size:16px}
+  .form-card{background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); padding:32px}
+  .form-group{margin-bottom:24px}
+  .form-group:last-of-type{margin-bottom:0}
+  label{display:block; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); font-weight:600; margin-bottom:8px}
+  input[type="text"],
+  input[type="number"],
+  input[type="url"],
+  textarea,
+  select{
+    width:100%; padding:12px 14px; border:1px solid var(--line-2);
+    border-radius:10px; background:var(--card); font:inherit; color:var(--ink);
+    font-size:15px;
+  }
+  input[type="text"]:focus,
+  input[type="number"]:focus,
+  input[type="url"]:focus,
+  textarea:focus,
+  select:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
+  textarea{resize:vertical; min-height:100px}
+  .authors-container{display:flex; flex-direction:column; gap:12px}
+  .author-row{display:flex; gap:10px; align-items:flex-end}
+  .author-row input{flex:1}
+  .btn-remove{padding:12px 14px; border:1px solid var(--line-2); border-radius:10px; background:transparent; color:var(--muted); cursor:pointer; font-size:14px; white-space:nowrap; transition:all .12s}
+  .btn-remove:hover{border-color:#d9534f; color:#d9534f}
+  .btn-add-author{padding:10px 14px; border:1px solid var(--accent); border-radius:10px; background:transparent; color:var(--accent); cursor:pointer; font-size:14px; font-weight:500; transition:all .12s; margin-top:8px}
+  .btn-add-author:hover{background:var(--accent-soft)}
+  .optional-note{font-size:12px; color:var(--muted); margin-top:4px}
+  .form-actions{display:flex; gap:12px; margin-top:32px}
+  .btn-submit{flex:1; padding:14px 24px; border:none; border-radius:10px; background:var(--accent); color:#fff; font:inherit; font-size:15px; font-weight:500; cursor:pointer; transition:all .12s}
+  .btn-submit:hover{filter:brightness(1.08)}
+  .btn-submit:disabled{opacity:.6; cursor:default}
+  .btn-reset{padding:14px 24px; border:1px solid var(--line-2); border-radius:10px; background:transparent; color:var(--muted); cursor:pointer; font:inherit; font-size:15px; transition:all .12s}
+  .btn-reset:hover{border-color:var(--accent); color:var(--accent)}
+  .alert{padding:14px 16px; border-radius:10px; margin-bottom:24px; font-size:14px}
+  .alert.success{background:#d4edda; color:#155724; border:1px solid #c3e6cb}
+  .alert.error{background:#f8d7da; color:#721c24; border:1px solid #f5c6cb}
+  .hidden{display:none}
+  @media(max-width:680px){
+    .wrap{padding:32px 16px 60px}
+    .form-card{padding:24px}
+    .author-row{flex-direction:column}
+    .author-row input{width:100%}
+    .btn-remove{width:100%}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Contribute</p>
+    <h1>Submit a Paper</h1>
+    <p class="lede">Found a relevant paper? Help us build a comprehensive GBV literature review by sharing it below.</p>
+  </header>
+
+  <div class="form-card">
+    <div id="alert" class="alert hidden"></div>
+
+    <form id="form">
+      <div class="form-group">
+        <label>Full Author Names *</label>
+        <div class="authors-container" id="authorsContainer">
+          <input type="text" class="author-input" placeholder="First author" required>
+        </div>
+        <button type="button" class="btn-add-author" id="addAuthor">+ Add another author</button>
+      </div>
+
+      <div class="form-group">
+        <label>Title of Paper *</label>
+        <input type="text" name="title" placeholder="Enter the full paper title" required>
+      </div>
+
+      <div class="form-group">
+        <label>Year *</label>
+        <input type="number" name="year" placeholder="e.g., 2023" min="1900" max="2100" required>
+      </div>
+
+      <div class="form-group">
+        <label>Journal *</label>
+        <input type="text" name="journal" placeholder="Journal or publication name" required>
+      </div>
+
+      <div class="form-group">
+        <label>Main Result *</label>
+        <textarea name="mainResult" placeholder="Brief summary of the key finding" required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Identification Strategy *</label>
+        <input type="text" name="identification" placeholder="e.g., Instrumental variables, RCT, quasi-experimental design" required>
+      </div>
+
+      <div class="form-group">
+        <label>Method Used *</label>
+        <input type="text" name="methodUsed" placeholder="e.g., OLS regression, DiD, TWFE" required>
+      </div>
+
+      <div class="form-group">
+        <label>Abstract *</label>
+        <textarea name="abstract" placeholder="Paper abstract or summary" required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Paper Link *</label>
+        <input type="url" name="paperLink" placeholder="https://doi.org/... or link to PDF" required>
+      </div>
+
+      <div class="form-group">
+        <label>Website / Contact Info</label>
+        <input type="text" name="website" placeholder="Your website or email (optional)">
+        <p class="optional-note">Optional — helps us acknowledge your contribution</p>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-submit">Submit Paper</button>
+        <button type="reset" class="btn-reset">Clear</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const GOOGLE_APPS_SCRIPT_URL = "https://script.googleapis.com/macros/s/AKfycbxMaU-8YShlmSQ1_jamMZNg1yV_8jWjdIhtWtFDUx2tNFahYmSpQX3B_P9KaBej7XpU/exec";
+
+const addAuthorBtn = document.getElementById("addAuthor");
+const authorsContainer = document.getElementById("authorsContainer");
+const form = document.getElementById("form");
+const alertBox = document.getElementById("alert");
+
+addAuthorBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "author-input";
+  input.placeholder = "Additional author";
+  
+  const wrapper = document.createElement("div");
+  wrapper.style.display = "flex";
+  wrapper.style.gap = "10px";
+  wrapper.style.alignItems = "flex-end";
+  
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn-remove";
+  btn.textContent = "Remove";
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    wrapper.remove();
+  });
+  
+  wrapper.appendChild(input);
+  wrapper.appendChild(btn);
+  authorsContainer.appendChild(wrapper);
+});
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  
+  const authors = Array.from(document.querySelectorAll(".author-input"))
+    .map(input => input.value.trim())
+    .filter(Boolean)
+    .join("; ");
+  
+  if(!authors){
+    showAlert("Please enter at least one author name.", "error");
+    return;
+  }
+  
+  const formData = {
+    authors: authors,
+    title: form.title.value.trim(),
+    year: form.year.value.trim(),
+    journal: form.journal.value.trim(),
+    mainResult: form.mainResult.value.trim(),
+    identification: form.identification.value.trim(),
+    methodUsed: form.methodUsed.value.trim(),
+    abstract: form.abstract.value.trim(),
+    paperLink: form.paperLink.value.trim(),
+    website: form.website.value.trim()
+  };
+  
+  try {
+    const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify(formData)
+    });
+    
+    const result = await response.json();
+    
+    if(result.success){
+      showAlert("Thank you! Your submission has been received. We'll review it shortly.", "success");
+      form.reset();
+      authorsContainer.innerHTML = '<input type="text" class="author-input" placeholder="First author" required>';
+    } else {
+      showAlert("Something went wrong. Please try again.", "error");
+    }
+  } catch(error) {
+    console.error("Error:", error);
+    showAlert("Network error. Please check your connection and try again.", "error");
+  }
+});
+
+function showAlert(message, type){
+  alertBox.textContent = message;
+  alertBox.className = "alert " + type;
+  window.scrollTo({top: 0, behavior: "smooth"});
+}
+</script>
+</body>
+</html>
