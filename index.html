@@ -82,7 +82,7 @@
   td.title{font-weight:500; max-width:460px}
   td.authors{white-space:nowrap; color:var(--ink)}
   td.year,td.country{white-space:nowrap; color:var(--muted); font-variant-numeric:tabular-nums}
-  td.journal{max-width:120px; white-space:normal; word-wrap:break-word; color:var(--muted); font-size:13px}
+  td.journal{color:var(--muted)}
   .pill{display:inline-block; padding:3px 9px; border-radius:999px; background:var(--accent-soft); color:var(--accent); font-size:12px; font-weight:500; white-space:nowrap}
   tr.detail td{padding:0; background:#f5f7fa}
   .detail-inner{padding:6px 22px 24px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px 40px}
@@ -162,7 +162,7 @@
     <h1>Gender-Based Violence</h1>
     <p class="lede">A structured, searchable bibliography. Click any row to expand the full record — identification strategy, methods, data, framework, and notes.</p>
     <p class="disclaimer">Disclaimer: This is a working bibliography. Please verify all information and details against the original sources before use.</p>
-    <p class="submit-note">Is there are paper you'd like to add to this list? <a href="#submit-form">Submit it below</a>.</p>
+    <p class="submit-note">Found a paper we're missing? <a href="#submit-form">Submit it below</a>.</p>
   </header>
 
   <div class="controls">
@@ -265,7 +265,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script>
-const FORMSPREE_URL = "https://formspree.io/f/mnjybpog";
+const GOOGLE_APPS_SCRIPT_URL = "https://script.googleapis.com/macros/s/AKfycbxMaU-8YShlmSQ1_jamMZNg1yV_8jWjdIhtWtFDUx2tNFahYmSpQX3B_P9KaBej7XpU/exec";
 
 const addAuthorBtn = document.getElementById("addAuthor");
 const authorsContainer = document.getElementById("authorsContainer");
@@ -311,32 +311,37 @@ form.addEventListener("submit", async (e) => {
     return;
   }
   
-  const formData = new FormData();
-  formData.append("Full Author Names", authors);
-  formData.append("Title of Paper", form.title.value.trim());
-  formData.append("Year", form.year.value.trim());
-  formData.append("Journal", form.journal.value.trim());
-  formData.append("Main Result", form.mainResult.value.trim());
-  formData.append("Identification Strategy", form.identification.value.trim());
-  formData.append("Method Used", form.methodUsed.value.trim());
-  formData.append("Abstract", form.abstract.value.trim());
-  formData.append("Paper Link", form.paperLink.value.trim());
-  formData.append("Website / Contact Info", form.website.value.trim());
+  const formData = {
+    authors: authors,
+    title: form.title.value.trim(),
+    year: form.year.value.trim(),
+    journal: form.journal.value.trim(),
+    mainResult: form.mainResult.value.trim(),
+    identification: form.identification.value.trim(),
+    methodUsed: form.methodUsed.value.trim(),
+    abstract: form.abstract.value.trim(),
+    paperLink: form.paperLink.value.trim(),
+    website: form.website.value.trim()
+  };
   
   try {
-    await fetch(FORMSPREE_URL, {
+    const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
       method: "POST",
-      body: formData
+      body: JSON.stringify(formData)
     });
     
-    showAlert("Thank you! Your submission has been received. We'll review it shortly.", "success");
-    form.reset();
-    authorsContainer.innerHTML = '<input type="text" class="author-input" placeholder="First author" required>';
+    const result = await response.json();
+    
+    if(result.success){
+      showAlert("Thank you! Your submission has been received. We'll review it shortly.", "success");
+      form.reset();
+      authorsContainer.innerHTML = '<input type="text" class="author-input" placeholder="First author" required>';
+    } else {
+      showAlert("Something went wrong. Please try again.", "error");
+    }
   } catch(error) {
     console.error("Error:", error);
-    showAlert("Thank you! Your submission has been received. We'll review it shortly.", "success");
-    form.reset();
-    authorsContainer.innerHTML = '<input type="text" class="author-input" placeholder="First author" required>';
+    showAlert("Network error. Please check your connection and try again.", "error");
   }
 });
 
@@ -351,8 +356,8 @@ const PAGE_SIZE = 20;
 let rows = [], page = 1, sortKey = "No", sortDir = 1, openId = null, query = "", filters = {}, selected = new Set();
 
 const COLUMNS = [];
-const PRIMARY_PREF = ["No","Title","Authors","Year","Journal"];
-const FACET_PREF = ["Year","Method Used","Identification"];
+const PRIMARY_PREF = ["Authors","Title","Year","Journal","Country"];
+const FACET_PREF = ["Country","Methods","Year","Journal"];
 const SPAN_FIELDS = new Set(["Abstract","Main Result"]);
 const DETAIL_SKIP = new Set();
 const LABELS = {};
