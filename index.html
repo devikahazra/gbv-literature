@@ -311,31 +311,25 @@ form.addEventListener("submit", async (e) => {
     return;
   }
   
-  const formData = {
-    authors: authors,
-    title: form.title.value.trim(),
-    year: form.year.value.trim(),
-    journal: form.journal.value.trim(),
-    mainResult: form.mainResult.value.trim(),
-    identification: form.identification.value.trim(),
-    methodUsed: form.methodUsed.value.trim(),
-    abstract: form.abstract.value.trim(),
-    paperLink: form.paperLink.value.trim(),
-    website: form.website.value.trim()
-  };
+  const formData = new FormData();
+  formData.append("Full Author Names", authors);
+  formData.append("Title of Paper", form.title.value.trim());
+  formData.append("Year", form.year.value.trim());
+  formData.append("Journal", form.journal.value.trim());
+  formData.append("Main Result", form.mainResult.value.trim());
+  formData.append("Identification Strategy", form.identification.value.trim());
+  formData.append("Method Used", form.methodUsed.value.trim());
+  formData.append("Abstract", form.abstract.value.trim());
+  formData.append("Paper Link", form.paperLink.value.trim());
+  formData.append("Website / Contact Info", form.website.value.trim());
   
   try {
     const response = await fetch(FORMSPREE_URL, {
       method: "POST",
-      headers: {
-        "Accept": "application/json"
-      },
-      body: JSON.stringify(formData)
+      body: formData
     });
     
-    const result = await response.json();
-    
-    if(result.success){
+    if(response.ok){
       showAlert("Thank you! Your submission has been received. We'll review it shortly.", "success");
       form.reset();
       authorsContainer.innerHTML = '<input type="text" class="author-input" placeholder="First author" required>';
