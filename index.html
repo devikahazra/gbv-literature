@@ -265,7 +265,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script>
-const GOOGLE_APPS_SCRIPT_URL = "https://script.googleapis.com/macros/s/AKfycbxMaU-8YShlmSQ1_jamMZNg1yV_8jWjdIhtWtFDUx2tNFahYmSpQX3B_P9KaBej7XpU/exec";
+const FORMSPREE_URL = "https://formspree.io/f/mnjybpog";
 
 const addAuthorBtn = document.getElementById("addAuthor");
 const authorsContainer = document.getElementById("authorsContainer");
@@ -325,8 +325,11 @@ form.addEventListener("submit", async (e) => {
   };
   
   try {
-    const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+    const response = await fetch(FORMSPREE_URL, {
       method: "POST",
+      headers: {
+        "Accept": "application/json"
+      },
       body: JSON.stringify(formData)
     });
     
