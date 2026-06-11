@@ -200,7 +200,7 @@
 
       <form id="form">
         <div class="form-group">
-          <label>Full Author Names *</label>
+          <label>Author's Full Name *</label>
           <div class="authors-container" id="authorsContainer">
             <input type="text" class="author-input" placeholder="First author" required>
           </div>
@@ -223,6 +223,16 @@
         </div>
 
         <div class="form-group">
+          <label>Abstract *</label>
+          <textarea name="abstract" placeholder="Paper abstract or summary" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Paper Link *</label>
+          <input type="url" name="paperLink" placeholder="https://doi.org/... or link to PDF" required>
+        </div>
+
+        <div class="form-group">
           <label>Main Result *</label>
           <textarea name="mainResult" placeholder="Brief summary of the key finding" required></textarea>
         </div>
@@ -235,16 +245,6 @@
         <div class="form-group">
           <label>Method Used *</label>
           <input type="text" name="methodUsed" placeholder="e.g., OLS regression, DiD, TWFE" required>
-        </div>
-
-        <div class="form-group">
-          <label>Abstract *</label>
-          <textarea name="abstract" placeholder="Paper abstract or summary" required></textarea>
-        </div>
-
-        <div class="form-group">
-          <label>Paper Link *</label>
-          <input type="url" name="paperLink" placeholder="https://doi.org/... or link to PDF" required>
         </div>
 
         <div class="form-group">
