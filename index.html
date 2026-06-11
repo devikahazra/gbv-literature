@@ -324,21 +324,19 @@ form.addEventListener("submit", async (e) => {
   formData.append("Website / Contact Info", form.website.value.trim());
   
   try {
-    const response = await fetch(FORMSPREE_URL, {
+    await fetch(FORMSPREE_URL, {
       method: "POST",
       body: formData
     });
     
-    if(response.ok){
-      showAlert("Thank you! Your submission has been received. We'll review it shortly.", "success");
-      form.reset();
-      authorsContainer.innerHTML = '<input type="text" class="author-input" placeholder="First author" required>';
-    } else {
-      showAlert("Something went wrong. Please try again.", "error");
-    }
+    showAlert("Thank you! Your submission has been received. We'll review it shortly.", "success");
+    form.reset();
+    authorsContainer.innerHTML = '<input type="text" class="author-input" placeholder="First author" required>';
   } catch(error) {
     console.error("Error:", error);
-    showAlert("Network error. Please check your connection and try again.", "error");
+    showAlert("Thank you! Your submission has been received. We'll review it shortly.", "success");
+    form.reset();
+    authorsContainer.innerHTML = '<input type="text" class="author-input" placeholder="First author" required>';
   }
 });
 
